@@ -1,4 +1,5 @@
 import os
+import subprocess
 import argparse
 
 def getArgs(): 
@@ -9,18 +10,18 @@ def getArgs():
 
 def main():
     args = getArgs()
-    #mypath = "/mnt/nas/shared/DataHoard/Websites"
     mypath = args.path
     filenames = os.listdir(mypath)
 
-    print (filenames)
+    #print (filenames)
 
     for url in filenames: 
         url = 'https://' + url
 
     for url in filenames: 
         print(f"""wget -q --recursive --html-extension --page-requisites --convert-links {url} -P {mypath}""")
-        os.system(f"""wget -q --recursive --html-extension --page-requisites --convert-links {url} -P {mypath}""")
+        #os.system(f"""wget -q --recursive --html-extension --page-requisites --convert-links {url} -P {mypath}""")
+        subprocess.Popen(f"""wget -q --recursive --html-extension --page-requisites --convert-links {url} -P {mypath}""", shell=True)
 
 if __name__ == "__main__": 
     main()
