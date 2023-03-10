@@ -19,6 +19,7 @@ def main():
         url = 'https://' + url
 
     for url in filenames: 
+        print(f"""wget -q --recursive --html-extension --page-requisites --convert-links {url} -P {mypath}""")
         os.system(f"""wget -q --recursive --html-extension --page-requisites --convert-links {url} -P {mypath}""")
 
 if __name__ == "__main__": 
