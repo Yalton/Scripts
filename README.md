@@ -1,9 +1,4 @@
 <!-- PROJECT SHIELDS -->
-Contributors
-Forks
-Stargazers
-Issues
-MIT License
 
 <!-- PROJECT LOGO -->
 <br />
