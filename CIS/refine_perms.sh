@@ -5,7 +5,7 @@ set_perms() {
     directory="$1"
     owner="$2"
     perms="$3"
-    if [[ "$(stat -c %U:%G %a "$directory")" != "$owner" ]] || [[ "$(stat -c %a "$directory")" != "$perms" ]]; then
+    if [[ "$(stat -c %U:%G "$directory")" != "$owner" ]] || [[ "$(stat -c %a "$directory")" != "$perms" ]]; then
         chown "$owner" "$directory"
         chmod "$perms" "$directory"
     fi
