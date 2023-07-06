@@ -7,8 +7,11 @@ echo "Starting system security enhancements..."
 echo "Disabling USB storage..."
 if ! /sbin/modprobe -n -v usb-storage | grep -q "install /bin/true" ; then
   echo "install usb-storage /bin/true" > /etc/modprobe.d/usb_storage.conf
-  rmmod usb-storage
+  if lsmod | grep -q "^usb_storage "; then
+    rmmod usb_storage
+  fi
 fi
+
 
 # Ensure sudo commands use pty
 echo "Ensuring sudo commands use pty..."
