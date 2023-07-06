@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Ensure permissions on /etc/crontab are configured
-if [ $(stat -c "%a %u %g" /etc/crontab) != "700 0 0" ]; then
+if [[ "$(stat -c "%a" /etc/crontab)" -ne 700 || "$(stat -c "%u" /etc/crontab)" -ne 0 || "$(stat -c "%g" /etc/crontab)" -ne 0 ]]; then
   chown root:root /etc/crontab
   chmod og-rwx /etc/crontab
 fi
 
 # Ensure permissions on /etc/cron.d are configured
-if [ $(stat -c "%a %u %g" /etc/cron.d) != "700 0 0" ]; then
+if [[ "$(stat -c "%a" /etc/cron.d)" -ne 700 || "$(stat -c "%u" /etc/cron.d)" -ne 0 || "$(stat -c "%g" /etc/cron.d)" -ne 0 ]]; then
   rm /etc/cron.deny
   rm /etc/at.deny
   touch /etc/cron.allow
@@ -24,6 +24,11 @@ if [ ! -f /etc/cron.allow ] || [ ! -f /etc/at.allow ] || [ -f /etc/at.deny ] || 
   touch /etc/at.allow
   chmod og-rwx /etc/cron.allow /etc/at.allow
   chown root:root /etc/cron.allow /etc/at.allow
+fi
+
+AUDIT_RULES_PATH="/etc/audit/audit.rules"
+if [ ! -f "$AUDIT_RULES_PATH" ]; then
+  touch "$AUDIT_RULES_PATH"
 fi
 
 # Ensure changes to system administration scope (sudoers) is collected
