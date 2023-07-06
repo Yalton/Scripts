@@ -26,17 +26,17 @@ if ! grep -q "^Defaults.*logfile=" /etc/sudoers ; then
 fi
 
 # Ensure AIDE is installed
-echo "Ensuring AIDE is installed..."
-if ! dpkg -s aide >/dev/null 2>&1; then
-  apt install -y aide aide-common
-  aideinit
-fi
+# echo "Ensuring AIDE is installed..."
+# if ! dpkg -s aide >/dev/null 2>&1; then
+#   apt install -y aide aide-common
+#   aideinit
+# fi
 
-# Ensure filesystem integrity is regularly checked
-echo "Ensuring filesystem integrity is regularly checked..."
-if ! crontab -u root -l | grep -q "/usr/bin/aide.wrapper --config /etc/aide/aide.conf --check"; then
-  echo "0 5 * * * /usr/bin/aide.wrapper --config /etc/aide/aide.conf --check" | crontab -u root -
-fi
+# # Ensure filesystem integrity is regularly checked
+# echo "Ensuring filesystem integrity is regularly checked..."
+# if ! crontab -u root -l | grep -q "/usr/bin/aide.wrapper --config /etc/aide/aide.conf --check"; then
+#   echo "0 5 * * * /usr/bin/aide.wrapper --config /etc/aide/aide.conf --check" | crontab -u root -
+# fi
 
 # Ensure permissions on bootloader config are configured
 echo "Ensuring permissions on bootloader config are configured..."
