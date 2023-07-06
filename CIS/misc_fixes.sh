@@ -91,12 +91,27 @@ function restrict_su_command {
   fi
 }
 
+
+echo "check_and_install_libpam"
 check_and_install_libpam
+
+echo "check_and_configure_password_policy"
 check_and_configure_password_policy
+
+echo "check_and_configure_login_attempts"
 check_and_configure_login_attempts
+
+echo "check_and_configure_password_history"
 check_and_configure_password_history
+
+echo "update_password_policy"
 update_password_policy
+
+echo "update_umask_and_timeout"
 update_umask_and_timeout
+
+echo "restrict_su_command"
 restrict_su_command
 
 echo "Password policies successfully updated"
+echo "CIS vulnerabilities fixed"

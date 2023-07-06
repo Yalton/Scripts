@@ -5,6 +5,8 @@ function update_sshd_config {
     local key="$1"
     local value="$2"
     local config_file="/etc/ssh/sshd_config"
+    
+    echo "Updating $key in SSHD Config to $value..."
 
     if grep -q -P "^#\?\s*$key" "$config_file"; then
         # Uncomment the existing configuration line
@@ -22,6 +24,8 @@ function update_sshd_config {
 function uninstall_package {
     local package="$1"
 
+    echo "Uninstalling $package if installed..."
+
     if dpkg -s "$package" >/dev/null 2>&1; then
         apt purge -y "$package"
     fi
@@ -37,6 +41,7 @@ uninstall_package "rsh-client"
 uninstall_package "telnet"
 
 # Ensure permissions on /etc/ssh/sshd_config are configured
+echo "Configuring permissions on /etc/ssh/sshd_config..."
 chown root:root /etc/ssh/sshd_config
 chmod og-rwx /etc/ssh/sshd_config
 
@@ -85,6 +90,7 @@ update_sshd_config "AllowTcpForwarding" "no"
 update_sshd_config "MaxStartups" "10:30:60"
 
 # Restart SSH service to apply changes
+echo "Restarting SSH service to apply changes..."
 systemctl restart ssh
 
 echo "CIS vulnerabilities fixed"

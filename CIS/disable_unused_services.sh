@@ -33,6 +33,7 @@ disable_module() {
     fi
 }
 
+echo "Disabling Uneeded services..."
 # Disabling services
 disable_service "avahi-daemon"
 disable_service "cups"
@@ -46,4 +47,4 @@ disable_module "sctp"
 disable_module "rds"
 disable_module "tipc"
 
-echo "Done"
+echo "CIS vulnerabilities fixed"

@@ -11,12 +11,14 @@ set_perms() {
     fi
 }
 
+echo "Configuring permissions on /etc/cron..."
 # Set permissions for cron directories
 set_perms "/etc/cron.hourly" "root:root" "0700"
 set_perms "/etc/cron.daily" "root:root" "0700"
 set_perms "/etc/cron.weekly" "root:root" "0700"
 set_perms "/etc/cron.monthly" "root:root" "0700"
 
+echo "Setting permissions for passwd, group, shadow backup files..."
 # Set permissions for passwd, group, shadow backup files
 set_perms "/etc/passwd-" "root:root" "0600"
 set_perms "/etc/group-" "root:root" "0600"
@@ -29,9 +31,10 @@ remove_plus_entries() {
     fi
 }
 
+echo "Remove '+' entries from /etc/passwd /etc/shadow /etc/group..."
 # Remove '+' entries
 remove_plus_entries "/etc/passwd"
 remove_plus_entries "/etc/shadow"
 remove_plus_entries "/etc/group"
 
-echo "Completed setting permissions and removing '+' entries"
+echo "CIS vulnerabilities fixed"
