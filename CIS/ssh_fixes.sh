@@ -42,8 +42,8 @@ uninstall_package "telnet"
 
 # SSH access is limited
 # Allow all users and groups with a home directory
-userlist=$(awk -F':' '{ if ($3 >= 1000 && $3 != 65534 && $6 != "/nonexistent" && $7 != "/usr/sbin/nologin") print $1}' /etc/passwd)
-grouplist=$(awk -F':' '{ if ($3 >= 1000 && $3 != 65534) print $1}' /etc/group)
+userlist=$(awk -F':' '{ if ($3 >= 1000 && $3 != 65534 && $6 != "/nonexistent" && $7 != "/usr/sbin/nologin") print $1}' /etc/passwd | tr '\n' ' ')
+grouplist=$(awk -F':' '{ if ($3 >= 1000 && $3 != 65534) print $1}' /etc/group | tr '\n' ' ')
 
 update_sshd_config "AllowUsers" "$userlist"
 update_sshd_config "AllowGroups" "$grouplist"
