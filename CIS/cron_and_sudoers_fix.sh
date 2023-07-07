@@ -27,6 +27,12 @@ if [ ! -f /etc/cron.allow ] || [ ! -f /etc/at.allow ] || [ -f /etc/at.deny ] || 
 fi
 
 AUDIT_RULES_PATH="/etc/audit/audit.rules"
+AUDIT_DIR_PATH="/etc/audit"
+
+if [ ! -d "$AUDIT_DIR_PATH" ]; then
+  mkdir "$AUDIT_DIR_PATH"
+fi
+
 if [ ! -f "$AUDIT_RULES_PATH" ]; then
   touch "$AUDIT_RULES_PATH"
 fi
