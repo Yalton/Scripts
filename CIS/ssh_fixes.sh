@@ -40,40 +40,13 @@ uninstall_package "rsh-client"
 # Ensure telnet client is not installed
 uninstall_package "telnet"
 
-# Ensure permissions on /etc/ssh/sshd_config are configured
-echo "Configuring permissions on /etc/ssh/sshd_config..."
-chown root:root /etc/ssh/sshd_config
-chmod og-rwx /etc/ssh/sshd_config
-
-# Ensure SSH X11 forwarding is disabled
-update_sshd_config "X11Forwarding" "no"
-
-# Ensure SSH MaxAuthTries is set to 4 or less
-update_sshd_config "MaxAuthTries" "4"
-
-# Disable PermitUserEnvironment
-update_sshd_config "PermitUserEnvironment" "no"
-
-# Use only strong ciphers
-update_sshd_config "Ciphers" "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"
-
-# Use only strong MAC algorithms
-update_sshd_config "MACs" "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256"
-
-# Use only strong Key Exchange algorithms
-update_sshd_config "KexAlgorithms" "curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group14-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256"
-
-# SSH Idle Timeout Interval is configured
-update_sshd_config "ClientAliveInterval" "300"
-update_sshd_config "ClientAliveCountMax" "0"
-
-# SSH LoginGraceTime is set to one minute or less
-update_sshd_config "LoginGraceTime" "60"
-
 # SSH access is limited
-# Add your user and group lists here
-update_sshd_config "AllowUsers" "<userlist>"
-update_sshd_config "AllowGroups" "<grouplist>"
+# Allow all users and groups with a home directory
+userlist=$(awk -F':' '{ if ($3 >= 1000 && $3 != 65534 && $6 != "/nonexistent" && $7 != "/usr/sbin/nologin") print $1}' /etc/passwd)
+grouplist=$(awk -F':' '{ if ($3 >= 1000 && $3 != 65534) print $1}' /etc/group)
+
+update_sshd_config "AllowUsers" "$userlist"
+update_sshd_config "AllowGroups" "$grouplist"
 update_sshd_config "DenyUsers" "<userlist>"
 update_sshd_config "DenyGroups" "<grouplist>"
 
