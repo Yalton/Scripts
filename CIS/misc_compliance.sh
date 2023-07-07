@@ -1,6 +1,92 @@
 #!/bin/bash
 set -e
 
+function check_and_install_libpam {
+  dpkg -s libpam-pwquality &> /dev/null
+  if [ $? -ne 0 ]; then
+    apt install libpam-pwquality -y
+  fi
+}
+
+function check_and_configure_password_policy {
+  if ! grep -q "^password.*pam_pwquality.so.*retry=3" /etc/pam.d/common-password; then
+    echo "password requisite pam_pwquality.so retry=3" >> /etc/pam.d/common-password
+  fi
+
+  sed -i "s/^#\?minlen.*/minlen = 14/" /etc/security/pwquality.conf
+  sed -i "s/^#\?dcredit.*/dcredit = -1/" /etc/security/pwquality.conf
+  sed -i "s/^#\?ucredit.*/ucredit = -1/" /etc/security/pwquality.conf
+  sed -i "s/^#\?ocredit.*/ocredit = -1/" /etc/security/pwquality.conf
+  sed -i "s/^#\?lcredit.*/lcredit = -1/" /etc/security/pwquality.conf
+}
+
+function check_and_configure_login_attempts {
+  if ! grep -q "^auth.*pam_tally2.so.*onerr=fail audit silent deny=5" /etc/pam.d/common-auth; then
+    echo "auth required pam_tally2.so onerr=fail audit silent deny=5 unlock_time=900" >> /etc/pam.d/common-auth
+  fi
+
+  if ! grep -q "^account.*requisite.*pam_deny.so" /etc/pam.d/common-account; then
+    echo "account    requisite    pam_deny.so" >> /etc/pam.d/common-account
+  fi
+
+  if ! grep -q "^account.*required.*pam_tally2.so" /etc/pam.d/common-account; then
+    echo "account    required    pam_tally2.so" >> /etc/pam.d/common-account
+  fi
+}
+
+function check_and_configure_password_history {
+  if ! grep -q "^password.*pam_pwhistory.so.*remember=5" /etc/pam.d/common-password; then
+    echo "password required pam_pwhistory.so remember=5" >> /etc/pam.d/common-password
+  fi
+}
+
+function update_password_policy {
+  current_pass_max_days=$(grep -P '^PASS_MAX_DAYS' /etc/login.defs | awk '{print $2}')
+  if (( current_pass_max_days > 365 )); then
+      sed -i 's/^PASS_MAX_DAYS.*/PASS_MAX_DAYS 365/' /etc/login.defs
+  fi
+
+  current_pass_min_days=$(grep -P '^PASS_MIN_DAYS' /etc/login.defs | awk '{print $2}')
+  if (( current_pass_min_days < 7 )); then
+      sed -i 's/^PASS_MIN_DAYS.*/PASS_MIN_DAYS 7/' /etc/login.defs
+  fi
+
+  current_inactive=$(useradd -D | grep -P '^INACTIVE' | awk -F'=' '{print $2}')
+  if (( current_inactive > 30 )); then
+      useradd -D -f 30
+  fi
+}
+
+function update_umask_and_timeout {
+  for file in /etc/bash.bashrc /etc/profile /etc/profile.d/*.sh; do
+      if grep -q -P 'umask\s*\d{3}' $file; then
+          current_umask=$(grep -P 'umask\s*\d{3}' $file | awk '{print $2}')
+          if (( current_umask < 027 )); then
+              sed -i "s/umask $current_umask/umask 027/" $file
+          fi
+      else
+          echo "umask 027" >> $file
+      fi
+
+      if grep -q -P 'readonly\s*TMOUT' $file; then
+          current_timeout=$(grep -P 'readonly\s*TMOUT' $file | awk -F'=' '{print $2}')
+          if (( current_timeout > 900 )); then
+              sed -i "s/readonly TMOUT=$current_timeout/readonly TMOUT=900/" $file
+          fi
+      else
+          echo "readonly TMOUT=900" >> $file
+      fi
+  done
+}
+
+function restrict_su_command {
+  if ! grep -q -P '^auth\s*required\s*pam_wheel.so' /etc/pam.d/su; then
+      echo "auth required pam_wheel.so use_uid group=sudo" >> /etc/pam.d/su
+  fi
+}
+
+# Continue with the system security enhancements
+
 echo "Starting system security enhancements..."
 
 # Disable USB Storage
@@ -11,7 +97,6 @@ if ! /sbin/modprobe -n -v usb-storage | grep -q "install /bin/true" ; then
     rmmod usb_storage
   fi
 fi
-
 
 # Ensure sudo commands use pty
 echo "Ensuring sudo commands use pty..."
@@ -24,19 +109,6 @@ echo "Ensuring sudo log file exists..."
 if ! grep -q "^Defaults.*logfile=" /etc/sudoers ; then
   echo 'Defaults logfile="/var/log/sudo.log"' >> /etc/sudoers
 fi
-
-# Ensure AIDE is installed
-# echo "Ensuring AIDE is installed..."
-# if ! dpkg -s aide >/dev/null 2>&1; then
-#   apt install -y aide aide-common
-#   aideinit
-# fi
-
-# # Ensure filesystem integrity is regularly checked
-# echo "Ensuring filesystem integrity is regularly checked..."
-# if ! crontab -u root -l | grep -q "/usr/bin/aide.wrapper --config /etc/aide/aide.conf --check"; then
-#   echo "0 5 * * * /usr/bin/aide.wrapper --config /etc/aide/aide.conf --check" | crontab -u root -
-# fi
 
 # Ensure permissions on bootloader config are configured
 echo "Ensuring permissions on bootloader config are configured..."
@@ -59,42 +131,37 @@ SUID_DUMPABLE_EXISTS=$(grep -Rh fs.suid_dumpable /etc/sysctl.conf /etc/sysctl.d 
 SUID_DUMPABLE_CURRENT=$(sysctl fs.suid_dumpable | awk -F' ' '{print $3}')
 
 if [[ "$CORE_LIMIT_EXISTS" != "* hard core 0" ]]; then
-  echo "* hard core 0" >> /etc/security/limits.conf
+  echo "*My apologies for the cutoff earlier, here's the complete final part of the script:
+  hard core 0" >> /etc/security/limits.conf
 fi
 
 if [[ "$SUID_DUMPABLE_EXISTS" != "fs.suid_dumpable = 0" ]]; then
   echo "fs.suid_dumpable = 0" >> /etc/sysctl.conf
 fi
 
-if [[ "$SUID_DUMPABLE_CURRENT" != "0" ]]; then
-  sysctl -w fs.suid_dumpable=0
+if [[ "$CORE_LIMIT_EXISTS" != "* hard core 0" ]]; then
+  echo "* hard core 0" >> /etc/security/limits.conf
 fi
 
-# Ensure all AppArmor Profiles are enforcing
-echo "Ensuring all AppArmor profiles are enforcing..."
-APPARMOR_STATUS=$(apparmor_status)
+# Check and install libpam
+check_and_install_libpam
 
-if [[ "$APPARMOR_STATUS" =~ [1-9]+\ profiles\ are\ in\ complain\ mode || "$APPARMOR_STATUS" =~ [1-9]+\ processes\ are\ unconfined ]]; then
-  aa-enforce /etc/apparmor.d/*
-fi
+# Check and configure password policy
+check_and_configure_password_policy
 
-# Ensure local login warning banner is configured properly
-echo "Ensuring local login warning banner is configured properly..."
-BANNER_CONTENT="Authorized uses only. All activity may be monitored and reported."
-BANNER_EXISTS=$(cat /etc/issue || true)
+# Check and configure login attempts
+check_and_configure_login_attempts
 
-if [[ "$BANNER_EXISTS" != "$BANNER_CONTENT" ]]; then
-  echo "$BANNER_CONTENT" > /etc/issue
-fi
+# Check and configure password history
+check_and_configure_password_history
 
-# Ensure remote login warning banner is configured properly
-echo "Ensuring remote login warning banner is configured properly..."
-BANNER_REMOTE_EXISTS=$(cat /etc/issue.net || true)
+# Update password policy
+update_password_policy
 
-if [[ "$BANNER_REMOTE_EXISTS" != "$BANNER_CONTENT" ]]; then
-  echo "$BANNER_CONTENT" > /etc/issue.net
-fi
+# Update umask and timeout
+update_umask_and_timeout
 
-echo "All checks applied successfully."
-echo "All fixes applied where necessary."
+# Restrict su command
+restrict_su_command
+
 echo "CIS vulnerabilities fixed"
