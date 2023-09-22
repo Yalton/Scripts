@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#!/bin/bash
+set -x
+
 # Update and install zsh
 sudo apt update
 sudo apt install zsh -y
@@ -19,7 +22,7 @@ cp ~/.bashrc ~/.bashrc.backup
 grep "^export " ~/.bashrc >> ~/.zshrc
 
 # Edit .zshrc using nano
-nano ~/.zshrc
+#nano ~/.zshrc
 
 # Source .zshrc
 source ~/.zshrc
