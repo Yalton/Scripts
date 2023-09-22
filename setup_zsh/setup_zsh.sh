@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#!/bin/bash
-set -x
+#set -x
 
 # Update and install zsh
 sudo apt update
